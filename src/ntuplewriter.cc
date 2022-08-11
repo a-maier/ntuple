@@ -56,7 +56,8 @@ struct NTupleWriter {
   // we use a pointer here to work around a presumed ROOT bug,
   // where `tree` is not associated with `file`,
   // although `file` is guaranteed to be constructed first
-  std::unique_ptr<TTree> tree;
+  // a raw pointer is the correct type, since the file silently takes ownership
+  TTree* tree;
 };
 
 extern "C" {
@@ -65,7 +66,7 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
     auto *writer = new NTupleWriter{
       TFile(file, "RECREATE"),
       RootEvent{},
-      std::make_unique<TTree>("BHSntuples", title)
+      new TTree{"BHSntuples", title}
     };
     if(!writer) return nullptr;
     if(!writer->tree) return nullptr;
@@ -112,10 +113,6 @@ void ntuple_delete_writer(NTupleWriter * writer) {
 
   try {
     writer->tree->Write();
-    // without the next line I get a segfault
-    // maybe ROOT is automatically calling `delete`
-    //  on the tree when closing the file?
-    writer->tree.reset();
     writer->file.Close();
   } catch(...) {
     // let no exception escape,
