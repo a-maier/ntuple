@@ -2,17 +2,16 @@ mod bindings;
 pub mod event;
 pub mod ntuplewriter;
 
-pub use ntuplewriter::NTupleWriter;
-pub use event::Event;
+pub use crate::ntuplewriter::NTupleWriter;
+pub use crate::event::Event;
 
 include!(concat!(env!("OUT_DIR"), "/flags.rs"));
 
 #[cfg(test)]
 mod tests {
-    use std::{process::Command, path::PathBuf, ffi::OsStr, os::unix::prelude::{OsStrExt, AsRawFd}, fs::read_dir};
-
+    use std::{process::Command, path::PathBuf, ffi::OsStr, fs::read_dir, os::unix::prelude::OsStrExt};
     use ntuplereader::NTupleReader;
-    use tempfile::tempfile;
+    use tempfile::NamedTempFile;
 
     use super::*;
 
@@ -56,40 +55,39 @@ mod tests {
             .output()
             .unwrap()
             .stdout;
+        let (_, prefix) = prefix.split_last().unwrap(); // remove newline
         let data_path = PathBuf::from_iter(
-            [prefix.as_slice(), b"share", b"ntuplereader",].into_iter()
+            [prefix, b"share", b"ntuplereader",].into_iter()
                 .map(|p| OsStr::from_bytes(p))
         );
         for root_file in read_dir(data_path).unwrap() {
             let root_file = root_file.unwrap();
 
-            let tmp1 = tempfile().unwrap();
-            let tmp2 = tempfile().unwrap();
-            let tmpname1 = PathBuf::from_iter(
-                ["proc", "self", "fd", &tmp1.as_raw_fd().to_string()]
-            );
-            let tmpname2 = PathBuf::from_iter(
-                ["proc", "self", "fd", &tmp2.as_raw_fd().to_string()]
-            );
+            let tmp1 = NamedTempFile::new().unwrap();
+            let tmp2 = NamedTempFile::new().unwrap();
 
             let mut reader = NTupleReader::new();
             reader.add_file(root_file.path());
-            let mut writer = NTupleWriter::new(&tmpname1, "").unwrap();
-            while let Some(event) = read_event(&mut reader) {
-                writer.write(&event).unwrap();
+            {
+                let mut writer = NTupleWriter::new(tmp1.path(), "").unwrap();
+                while let Some(event) = read_event(&mut reader) {
+                    writer.write(&event).unwrap();
+                }
             }
 
             let mut reader = NTupleReader::new();
-            reader.add_file(&tmpname1);
-            let mut writer = NTupleWriter::new(&tmpname2, "").unwrap();
-            while let Some(event) = read_event(&mut reader) {
-                writer.write(&event).unwrap();
+            reader.add_file(tmp1.path());
+            {
+                let mut writer = NTupleWriter::new(tmp2.path(), "").unwrap();
+                while let Some(event) = read_event(&mut reader) {
+                    writer.write(&event).unwrap();
+                }
             }
 
             let mut reader1 = NTupleReader::new();
-            reader1.add_file(&tmpname1);
+            reader1.add_file(tmp1.path());
             let mut reader2 = NTupleReader::new();
-            reader2.add_file(&tmpname2);
+            reader2.add_file(tmp2.path());
 
             while let Some(event1) = read_event(&mut reader1) {
                 let event2 = read_event(&mut reader2).unwrap();
