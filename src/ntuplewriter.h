@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <stdint.h>
 
 typedef struct NTupleWriter NTupleWriter;
@@ -6,12 +5,12 @@ typedef struct NTupleWriter NTupleWriter;
 typedef struct {
   int32_t id;
   int32_t nparticle;
-  float* px;
-  float* py;
-  float* pz;
-  float* E;
+  float const * px;
+  float const * py;
+  float const * pz;
+  float const * energy;
   double alphas;
-  int32_t* kf;
+  int32_t const * kf;
   double weight;
   double weight2;
   double me_wgt;
@@ -25,9 +24,9 @@ typedef struct {
   double fac_scale;
   double ren_scale;
   int32_t nuwgt;
-  double* usr_wgts;
+  double const * usr_wgts;
   unsigned char part;
-  int16_t alphasPower;
+  int16_t alphas_power;
 } NTupleEvent;
 
 typedef enum {

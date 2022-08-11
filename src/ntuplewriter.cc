@@ -127,7 +127,7 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   std::copy(event->px, event->px + event->nparticle, ev.px.begin());
   std::copy(event->py, event->py + event->nparticle, ev.py.begin());
   std::copy(event->pz, event->pz + event->nparticle, ev.pz.begin());
-  std::copy(event->E, event->E + event->nparticle, ev.E.begin());
+  std::copy(event->energy, event->energy + event->nparticle, ev.E.begin());
   ev.alphas = event->alphas;
   std::copy(event->kf, event->kf + event->nparticle, ev.kf.begin());
   ev.weight = event->weight;
@@ -145,7 +145,7 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   ev.nuwgt = event->nuwgt;
   std::copy(event->usr_wgts, event->usr_wgts + event->nuwgt, ev.usr_wgts.begin());
   ev.part[0] = event->part;
-  ev.alphasPower = event->alphasPower;
+  ev.alphasPower = event->alphas_power;
 
   writer->tree->Fill();
   return OK;
