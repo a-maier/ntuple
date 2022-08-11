@@ -1,4 +1,6 @@
+extern "C" {
 #include "ntuplewriter.h"
+}
 
 #include <array>
 #include <cassert>
@@ -57,6 +59,7 @@ struct NTupleWriter {
   std::unique_ptr<TTree> tree;
 };
 
+extern "C" {
 NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
   auto * writer = new NTupleWriter{
     TFile(file, "RECREATE"),
@@ -149,4 +152,5 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
 
   writer->tree->Fill();
   return OK;
+}
 }
