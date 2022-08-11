@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+hepmc2 = { version = "0.5", optional = true }
 thiserror = "1.0"
 
 [build-dependencies]

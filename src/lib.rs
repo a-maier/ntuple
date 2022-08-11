@@ -1,6 +1,8 @@
 mod bindings;
 pub mod event;
 pub mod ntuplewriter;
+#[cfg(feature = "hepmc2")]
+pub mod conv;
 
 pub use crate::ntuplewriter::NTupleWriter;
 pub use crate::event::Event;
