@@ -61,56 +61,67 @@ struct NTupleWriter {
 
 extern "C" {
 NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
-  auto * writer = new NTupleWriter{
-    TFile(file, "RECREATE"),
-    RootEvent{},
-    std::make_unique<TTree>("BHSntuples", title)
-  };
-  if(!writer) return nullptr;
-  if(!writer->tree) return nullptr;
-  if(!writer->file.IsOpen()) return nullptr;
-  writer->event.part.back() = '\0'; // ensure c string is null terminated
+  try {
+    auto *writer = new NTupleWriter{
+      TFile(file, "RECREATE"),
+      RootEvent{},
+      std::make_unique<TTree>("BHSntuples", title)
+    };
+    if(!writer) return nullptr;
+    if(!writer->tree) return nullptr;
+    if(!writer->file.IsOpen()) return nullptr;
+    writer->event.part.back() = '\0'; // ensure c string is null terminated
 
-  auto & ev = writer->event;
-  auto & tree = *writer->tree;
-  tree.Branch("id", &ev.id, "id/I");
-  tree.Branch("nparticle", &ev.nparticle, "nparticle/I");
-  tree.Branch("px", ev.px.data(), "px[nparticle]/F");
-  tree.Branch("py", ev.py.data(), "py[nparticle]/F");
-  tree.Branch("pz", ev.pz.data(), "pz[nparticle]/F");
-  tree.Branch("E", ev.E.data(), "E[nparticle]/F");
-  tree.Branch("alphas", &ev.alphas, "alphas/D");
-  tree.Branch("kf", ev.kf.data(), "kf[nparticle]/I");
-  tree.Branch("weight", &ev.weight, "weight/D");
-  tree.Branch("weight2", &ev.weight2, "weight2/D");
-  // intentional typo 'me_wtg' for compatibility with existing files
-  tree.Branch("me_wgt", &ev.me_wgt, "me_wtg/D");
-  tree.Branch("me_wgt2", &ev.me_wgt2, "me_wtg2/D");
-  tree.Branch("x1", &ev.x1, "x1/D");
-  tree.Branch("x2", &ev.x2, "x2/D");
-  tree.Branch("x1p", &ev.x1p, "x1p/D");
-  tree.Branch("x2p", &ev.x2p, "x2p/D");
-  tree.Branch("id1", &ev.id1, "id1/I");
-  tree.Branch("id2", &ev.id2, "id2/I");
-  tree.Branch("fac_scale", &ev.fac_scale, "fac_scale/D");
-  tree.Branch("ren_scale", &ev.ren_scale, "ren_scale/D");
-  tree.Branch("nuwgt", &ev.nuwgt, "nuwgt/I");
-  tree.Branch("usr_wgts", ev.usr_wgts.data(), "usr_wgts[nuwgt]/D");
-  tree.Branch("part", ev.part.data(), "part/C");
-  tree.Branch("alphasPower", &ev.alphasPower, "alphasPower/S");
+    auto &ev = writer->event;
+    auto &tree = *writer->tree;
+    tree.Branch("id", &ev.id, "id/I");
+    tree.Branch("nparticle", &ev.nparticle, "nparticle/I");
+    tree.Branch("px", ev.px.data(), "px[nparticle]/F");
+    tree.Branch("py", ev.py.data(), "py[nparticle]/F");
+    tree.Branch("pz", ev.pz.data(), "pz[nparticle]/F");
+    tree.Branch("E", ev.E.data(), "E[nparticle]/F");
+    tree.Branch("alphas", &ev.alphas, "alphas/D");
+    tree.Branch("kf", ev.kf.data(), "kf[nparticle]/I");
+    tree.Branch("weight", &ev.weight, "weight/D");
+    tree.Branch("weight2", &ev.weight2, "weight2/D");
+    // intentional typo 'me_wtg' for compatibility with existing files
+    tree.Branch("me_wgt", &ev.me_wgt, "me_wtg/D");
+    tree.Branch("me_wgt2", &ev.me_wgt2, "me_wtg2/D");
+    tree.Branch("x1", &ev.x1, "x1/D");
+    tree.Branch("x2", &ev.x2, "x2/D");
+    tree.Branch("x1p", &ev.x1p, "x1p/D");
+    tree.Branch("x2p", &ev.x2p, "x2p/D");
+    tree.Branch("id1", &ev.id1, "id1/I");
+    tree.Branch("id2", &ev.id2, "id2/I");
+    tree.Branch("fac_scale", &ev.fac_scale, "fac_scale/D");
+    tree.Branch("ren_scale", &ev.ren_scale, "ren_scale/D");
+    tree.Branch("nuwgt", &ev.nuwgt, "nuwgt/I");
+    tree.Branch("usr_wgts", ev.usr_wgts.data(), "usr_wgts[nuwgt]/D");
+    tree.Branch("part", ev.part.data(), "part/C");
+    tree.Branch("alphasPower", &ev.alphasPower, "alphasPower/S");
 
-  return writer;
+    return writer;
+  } catch (...) {
+    return nullptr;
+  }
 }
 
 void ntuple_delete_writer(NTupleWriter * writer) {
   assert(writer);
   assert(writer->tree);
 
-  writer->tree->Write();
-  // without the next line I get a segfault
-  // maybe ROOT is automatically calling `delete` on the tree when closing the file?
-  writer->tree.reset();
-  writer->file.Close();
+  try {
+    writer->tree->Write();
+    // without the next line I get a segfault
+    // maybe ROOT is automatically calling `delete`
+    //  on the tree when closing the file?
+    writer->tree.reset();
+    writer->file.Close();
+  } catch(...) {
+    // let no exception escape,
+    // it's undefined behaviour to let it propagate to rust
+  }
+  // destructors must not throw in any case
   delete writer;
 }
 
@@ -150,7 +161,11 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   ev.part[0] = event->part;
   ev.alphasPower = event->alphas_power;
 
-  writer->tree->Fill();
+  try {
+    writer->tree->Fill();
+  } catch(...) {
+    return FILL_ERROR;
+  }
   return OK;
 }
 }

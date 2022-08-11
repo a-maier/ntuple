@@ -34,7 +34,8 @@ typedef enum {
   TOO_MANY_PARTICLES,
   TOO_MANY_WEIGHTS,
   NEGATIVE_NUMBER_OF_PARTICLES,
-  NEGATIVE_NUMBER_OF_WEIGHTS
+  NEGATIVE_NUMBER_OF_WEIGHTS,
+  FILL_ERROR,
 } WriteResult;
 
 NTupleWriter *ntuple_create_writer(char const *file, char const *title);

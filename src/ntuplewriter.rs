@@ -96,6 +96,8 @@ pub enum WriteError {
     LengthMismatch(usize, String, usize),
     #[error("Number of particles is negative: `{0}`")]
     NegParticleNum(i32),
+    #[error("Error filling event into TTree")]
+    FillError,
 
     #[error("Unknown error")]
     UnknownError,
@@ -106,6 +108,7 @@ impl From<WriteResult> for WriteError {
         match r {
             WriteResult::TOO_MANY_PARTICLES => Self::TooManyParticles,
             WriteResult::TOO_MANY_WEIGHTS => Self::TooManyWeights,
+            WriteResult::FILL_ERROR => Self::FillError,
             _ => Self::UnknownError
         }
     }
