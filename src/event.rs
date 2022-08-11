@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Event {
     pub id: i32,
@@ -49,5 +51,32 @@ impl From<Part> for u8 {
 impl From<Part> for i8 {
     fn from(p: Part) -> Self {
         u8::from(p) as i8
+    }
+}
+
+impl From<Part> for char {
+    fn from(p: Part) -> Self {
+        u8::from(p) as char
+    }
+}
+
+#[derive(Copy, Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum ConversionError {
+    #[error("'{0}' is not one of 'B', 'I', 'R', 'V'")]
+    BadChar(char)
+}
+
+impl TryFrom<char> for Part {
+    type Error = ConversionError;
+
+    fn try_from(c: char) -> Result<Self, Self::Error> {
+        use Part::*;
+        match c {
+            'B' => Ok(B),
+            'I' => Ok(I),
+            'R' => Ok(R),
+            'V' => Ok(V),
+            c => Err(ConversionError::BadChar(c))
+        }
     }
 }

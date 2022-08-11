@@ -35,8 +35,9 @@ fn compile_ntuple_writer() -> Result<()> {
 
     cc_cmd.compile("ntuplewriter");
 
+    let root_linker_flags = get_root_flags("--libs")?;
     let linker_flags =  Vec::from_iter(
-        get_root_flags("--libs")?.into_iter().map(|f| format!(r#"r"{f}""#))
+        root_linker_flags.iter().map(|f| format!(r#"r"{f}""#))
     );
     let mut flag_out = File::create(out_path.join("flags.rs"))?;
 
@@ -46,6 +47,18 @@ fn compile_ntuple_writer() -> Result<()> {
         linker_flags.len(),
         linker_flags.join(", ")
     )?;
+
+    #[cfg(feature="test")]
+    {
+        for flag in root_linker_flags {
+            println!("cargo:rustc-link-arg={flag}");
+        }
+        // TODO: use ntuplereader linker flags instead, but I don't know
+        //       how to specify dev-dependencies that are only needed for
+        //       test builds
+        println!("cargo:rustc-link-arg=-lNTR");
+    }
+
     Ok(())
 }
 
