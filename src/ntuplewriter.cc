@@ -6,11 +6,23 @@ extern "C" {
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 
 #include "TFile.h"
 #include "TTree.h"
 
 namespace {
+  // We need a mutex to ensure that we write to the correct file
+  //
+  // ROOT has the concept of a current directory, and when calling
+  // `Write()` data are written to this directory. The current directory
+  // changes whenever we open a new `TFile`, so we have to protect any
+  // `Write()` with a mutex against `TFile` construction. What is worse,
+  // we don't have control over when ROOT internally calls `Write()`.
+  // So we err on the conservative side, i.e. we lock the mutex and fix
+  // the current directory whenever we change data that might be written to file.
+  std::mutex file_mutex;
+
   // the following is guaranteed by ROOT documentation,
   // so naturally we don't trust it
   static_assert(sizeof(Int_t) == sizeof(int32_t));
@@ -63,6 +75,7 @@ struct NTupleWriter {
 extern "C" {
 NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
   try {
+    std::scoped_lock lock{file_mutex};
     auto *writer = new NTupleWriter{
       TFile(file, "RECREATE"),
       RootEvent{},
@@ -112,6 +125,8 @@ void ntuple_delete_writer(NTupleWriter * writer) {
   assert(writer->tree);
 
   try {
+    std::scoped_lock lock{file_mutex};
+    writer->file.cd();
     writer->tree->Write();
     writer->file.Close();
   } catch(...) {
@@ -159,6 +174,10 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   ev.alphasPower = event->alphas_power;
 
   try {
+    // filling data into the tree may trigger a write,
+    // so we have to lock the mutex and fix the current directory
+    std::scoped_lock lock{file_mutex};
+    writer->file.cd();
     writer->tree->Fill();
   } catch(...) {
     return FILL_ERROR;
