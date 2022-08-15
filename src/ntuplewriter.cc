@@ -75,7 +75,7 @@ struct NTupleWriter {
 extern "C" {
 NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
   try {
-    std::scoped_lock lock{file_mutex};
+    std::lock_guard<std::mutex> lock{file_mutex};
     auto *writer = new NTupleWriter{
       TFile(file, "RECREATE"),
       RootEvent{},
@@ -127,7 +127,7 @@ void ntuple_delete_writer(NTupleWriter * writer) {
   assert(writer->tree);
 
   try {
-    std::scoped_lock lock{file_mutex};
+    std::lock_guard<std::mutex> lock{file_mutex};
     writer->file.cd();
     writer->file.Write();
     writer->file.Close();
@@ -178,7 +178,7 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   try {
     // filling data into the tree may trigger a write,
     // so we have to lock the mutex and fix the current directory
-    std::scoped_lock lock{file_mutex};
+    std::lock_guard<std::mutex> lock{file_mutex};
     writer->file.cd();
     writer->tree->Fill();
   } catch(...) {
