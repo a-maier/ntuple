@@ -129,7 +129,7 @@ void ntuple_delete_writer(NTupleWriter * writer) {
   try {
     std::scoped_lock lock{file_mutex};
     writer->file.cd();
-    writer->tree->Write();
+    writer->file.Write();
     writer->file.Close();
   } catch(...) {
     // let no exception escape,
