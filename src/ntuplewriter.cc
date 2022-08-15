@@ -77,7 +77,7 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
   try {
     std::lock_guard<std::mutex> lock{file_mutex};
     auto *writer = new NTupleWriter{
-      TFile(file, "RECREATE"),
+      {file, "RECREATE"},
       RootEvent{},
       nullptr
     };
