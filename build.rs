@@ -22,12 +22,15 @@ fn compile_ntuple_writer() -> Result<()> {
         .write_to_file(out_path.join("ntuplewriter.rs"))
         .expect("Failed to write ntuple writer bindings!");
 
+    println!("cargo:rerun-if-changed=src/ntupleevent.h");
     println!("cargo:rerun-if-changed=src/ntuplewriter.h");
+    println!("cargo:rerun-if-changed=src/root_interface.hh");
     println!("cargo:rerun-if-changed=src/ntuplewriter.cc");
+    println!("cargo:rerun-if-changed=src/root_interface.cc");
     let mut cc_cmd = cc::Build::new();
     cc_cmd
         .cpp(true)
-        .file("src/ntuplewriter.cc");
+        .files(["src/ntuplewriter.cc", "src/root_interface.cc"]);
 
     for flag in get_root_flags("--cflags")? {
         cc_cmd.flag(&flag);
