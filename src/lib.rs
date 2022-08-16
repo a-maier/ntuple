@@ -1,12 +1,12 @@
 mod bindings;
 pub mod event;
-pub mod ntuplereader;
-pub mod ntuplewriter;
+pub mod reader;
+pub mod writer;
 #[cfg(feature = "hepmc2")]
 pub mod conv;
 
-pub use crate::ntuplereader::Reader;
-pub use crate::ntuplewriter::Writer;
+pub use crate::reader::Reader;
+pub use crate::writer::Writer;
 pub use crate::event::Event;
 
 include!(concat!(env!("OUT_DIR"), "/flags.rs"));
@@ -14,7 +14,7 @@ include!(concat!(env!("OUT_DIR"), "/flags.rs"));
 #[cfg(test)]
 mod tests {
     use std::{path::PathBuf, fs::read_dir};
-    use ntuplereader::Reader;
+    use reader::Reader;
     use tempfile::NamedTempFile;
 
     use super::*;
