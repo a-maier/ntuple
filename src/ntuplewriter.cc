@@ -82,10 +82,10 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
       nullptr
     };
     if(!writer) return nullptr;
+    if(!writer->file.IsOpen()) return nullptr;
     writer->file.cd();
     writer->tree = new TTree{"BHSntuples", title};
     if(!writer->tree) return nullptr;
-    if(!writer->file.IsOpen()) return nullptr;
     writer->event.part.back() = '\0'; // ensure c string is null terminated
 
     auto &ev = writer->event;
