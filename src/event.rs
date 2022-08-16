@@ -1,4 +1,8 @@
+use core::slice;
+
 use thiserror::Error;
+
+use crate::bindings::NTupleEvent;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Event {
@@ -26,6 +30,41 @@ pub struct Event {
     pub part: Part,
     pub alphas_power: i16,
 }
+
+impl From<NTupleEvent> for Event {
+    fn from(ev: NTupleEvent) -> Self {
+        assert!(ev.nparticle >= 0);
+        assert!(ev.nuwgt >= 0);
+        let npart = ev.nparticle as usize;
+        let nwgt = ev.nuwgt as usize;
+        Self {
+            id: ev.id,
+            nparticle: ev.nparticle,
+            px: unsafe { slice::from_raw_parts(ev.px, npart) }.to_owned(),
+            py: unsafe { slice::from_raw_parts(ev.py, npart) }.to_owned(),
+            pz: unsafe { slice::from_raw_parts(ev.pz, npart) }.to_owned(),
+            energy: unsafe { slice::from_raw_parts(ev.energy, npart) }.to_owned(),
+            alphas: ev.alphas,
+            pdg_code: unsafe { slice::from_raw_parts(ev.kf, npart) }.to_owned(),
+            weight: ev.weight,
+            weight2: ev.weight2,
+            me_weight: ev.me_wgt,
+            me_weight2: ev.me_wgt2,
+            x1: ev.x1,
+            x2: ev.x2,
+            x1p: ev.x1p,
+            x2p: ev.x2p,
+            id1: ev.id1,
+            id2: ev.id2,
+            fac_scale: ev.fac_scale,
+            ren_scale: ev.ren_scale,
+            user_weights: unsafe { slice::from_raw_parts(ev.usr_wgts, nwgt) }.to_owned(),
+            part: ev.part.try_into().unwrap(),
+            alphas_power: ev.alphas_power,
+        }
+    }
+}
+
 
 #[derive(Copy, Clone, Default, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Part {
@@ -78,5 +117,28 @@ impl TryFrom<char> for Part {
             'V' => Ok(V),
             c => Err(ConversionError::BadChar(c))
         }
+    }
+}
+
+impl TryFrom<u8> for Part {
+    type Error = ConversionError;
+
+    fn try_from(c: u8) -> Result<Self, Self::Error> {
+        use Part::*;
+        match c {
+            b'B' => Ok(B),
+            b'I' => Ok(I),
+            b'R' => Ok(R),
+            b'V' => Ok(V),
+            c => Err(ConversionError::BadChar(c.into()))
+        }
+    }
+}
+
+impl TryFrom<i8> for Part {
+    type Error = ConversionError;
+
+    fn try_from(c: i8) -> Result<Self, Self::Error> {
+        (c as i8).try_into()
     }
 }

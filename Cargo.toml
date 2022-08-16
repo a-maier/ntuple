@@ -12,10 +12,5 @@ anyhow = "1.0"
 bindgen = "0.60"
 cc = "1.0"
 
-[features]
-# evil hack: necessary for tests to ensure proper linker flags
-test = []
-
 [dev-dependencies]
-ntuplereader = { version = "0.1", git = "https://github.com/a-maier/ntuplereader.git" }
 tempfile = "3.3"

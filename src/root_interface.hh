@@ -24,6 +24,7 @@ namespace ntuple {
   // so naturally we don't trust it
   static_assert(sizeof(Int_t) == sizeof(int32_t));
   static_assert(sizeof(Short_t) == sizeof(int16_t));
+  static_assert(sizeof(Long64_t) == sizeof(int64_t));
   // for floating-point types, cross fingers and hope for the best
   static_assert(sizeof(Float_t) == sizeof(float));
   static_assert(sizeof(Double_t) == sizeof(double));
@@ -55,7 +56,7 @@ namespace ntuple {
     Int_t nuwgt;
     std::array<Double_t, MAX_NWGT> usr_wgts;
     std::array<Char_t, 2> part;
-    Short_t alphasPower;
+    Short_t alphas_power;
   };
 
 } // namespace ntuple

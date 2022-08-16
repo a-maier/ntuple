@@ -65,7 +65,7 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
     tree.Branch("nuwgt", &ev.nuwgt, "nuwgt/I");
     tree.Branch("usr_wgts", ev.usr_wgts.data(), "usr_wgts[nuwgt]/D");
     tree.Branch("part", ev.part.data(), "part/C");
-    tree.Branch("alphasPower", &ev.alphasPower, "alphasPower/S");
+    tree.Branch("alphasPower", &ev.alphas_power, "alphasPower/S");
 
     return writer;
   } catch (...) {
@@ -96,10 +96,14 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   assert(writer->tree);
   auto & ev = writer->event;
 
-  if(event->nparticle < 0) return NEGATIVE_NUMBER_OF_PARTICLES;
-  if(event->nuwgt < 0) return NEGATIVE_NUMBER_OF_WEIGHTS;
-  if(static_cast<uint32_t>(event->nparticle) > MAX_NPARTICLE) return TOO_MANY_PARTICLES;
-  if(static_cast<uint32_t>(event->nuwgt) > MAX_NWGT) return TOO_MANY_WEIGHTS;
+  if(event->nparticle < 0) return WRITE_NEGATIVE_NUMBER_OF_PARTICLES;
+  if(event->nuwgt < 0) return WRITE_NEGATIVE_NUMBER_OF_WEIGHTS;
+  if(static_cast<uint32_t>(event->nparticle) > MAX_NPARTICLE) {
+    return WRITE_TOO_MANY_PARTICLES;
+  }
+  if(static_cast<uint32_t>(event->nuwgt) > MAX_NWGT) {
+    return WRITE_TOO_MANY_WEIGHTS;
+  }
 
   ev.id = event->id;
   ev.nparticle = event->nparticle;
@@ -124,7 +128,7 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
   ev.nuwgt = event->nuwgt;
   std::copy(event->usr_wgts, event->usr_wgts + event->nuwgt, ev.usr_wgts.begin());
   ev.part[0] = event->part;
-  ev.alphasPower = event->alphas_power;
+  ev.alphas_power = event->alphas_power;
 
   try {
     // filling data into the tree may trigger a write,
@@ -133,8 +137,8 @@ WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event)
     writer->file.cd();
     writer->tree->Fill();
   } catch(...) {
-    return FILL_ERROR;
+    return WRITE_FILL_ERROR;
   }
-  return OK;
+  return WRITE_OK;
 }
 }

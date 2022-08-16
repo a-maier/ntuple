@@ -6,12 +6,12 @@
 typedef struct NTupleWriter NTupleWriter;
 
 typedef enum {
-  OK,
-  TOO_MANY_PARTICLES,
-  TOO_MANY_WEIGHTS,
-  NEGATIVE_NUMBER_OF_PARTICLES,
-  NEGATIVE_NUMBER_OF_WEIGHTS,
-  FILL_ERROR,
+  WRITE_OK,
+  WRITE_TOO_MANY_PARTICLES,
+  WRITE_TOO_MANY_WEIGHTS,
+  WRITE_NEGATIVE_NUMBER_OF_PARTICLES,
+  WRITE_NEGATIVE_NUMBER_OF_WEIGHTS,
+  WRITE_FILL_ERROR,
 } WriteResult;
 
 NTupleWriter *ntuple_create_writer(char const *file, char const *title);

@@ -79,7 +79,7 @@ impl NTupleWriter {
             ntuple_write_event(self.0, &event)
         };
         match res {
-            WriteResult::OK => Ok(()),
+            WriteResult::WRITE_OK => Ok(()),
             err => Err(WriteError::from(err))
         }
     }
@@ -106,9 +106,9 @@ pub enum WriteError {
 impl From<WriteResult> for WriteError {
     fn from(r: WriteResult) -> Self {
         match r {
-            WriteResult::TOO_MANY_PARTICLES => Self::TooManyParticles,
-            WriteResult::TOO_MANY_WEIGHTS => Self::TooManyWeights,
-            WriteResult::FILL_ERROR => Self::FillError,
+            WriteResult::WRITE_TOO_MANY_PARTICLES => Self::TooManyParticles,
+            WriteResult::WRITE_TOO_MANY_WEIGHTS => Self::TooManyWeights,
+            WriteResult::WRITE_FILL_ERROR => Self::FillError,
             _ => Self::UnknownError
         }
     }
@@ -116,6 +116,6 @@ impl From<WriteResult> for WriteError {
 
 impl Drop for NTupleWriter {
     fn drop(&mut self) {
-        unsafe { ntuple_delete_writer(self.0) }.into()
+        unsafe { ntuple_delete_writer(self.0) }
     }
 }
