@@ -1,6 +1,6 @@
 [package]
-name = "ntuplewriter"
-version = "0.2.4"
+name = "ntuple"
+version = "0.1.0"
 edition = "2021"
 
 [dependencies]
