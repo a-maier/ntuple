@@ -22,6 +22,14 @@ impl Reader {
             Some(Self{reader: ptr, idx: 0})
         }
     }
+
+    pub fn nevent(&self) -> &i64 {
+        &self.idx
+    }
+
+    pub fn nevent_mut(&mut self) -> &mut i64 {
+        &mut self.idx
+    }
 }
 
 impl Iterator for Reader {
@@ -46,6 +54,11 @@ impl Iterator for Reader {
             ReadStatus::READ_NEGATIVE_NUMBER_OF_WEIGHTS => Some(Err(NegWeightNum(res.event.nuwgt))),
             _ => Some(Err(UnknownError))
         }
+    }
+
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.idx += n as i64;
+        self.next()
     }
 }
 
