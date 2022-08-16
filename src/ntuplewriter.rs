@@ -4,11 +4,11 @@ use crate::{bindings::{ntuple_create_writer, ntuple_write_event, ntuple_delete_w
 use thiserror::Error;
 
 #[derive(Debug)]
-pub struct NTupleWriter (
+pub struct Writer (
     *mut crate::bindings::NTupleWriter
 );
 
-impl NTupleWriter {
+impl Writer {
     pub fn new<P: AsRef<Path>>(file: P, name: &str) -> Option<Self> {
         let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
         let ptr = unsafe {
@@ -114,7 +114,7 @@ impl From<WriteResult> for WriteError {
     }
 }
 
-impl Drop for NTupleWriter {
+impl Drop for Writer {
     fn drop(&mut self) {
         unsafe { ntuple_delete_writer(self.0) }
     }

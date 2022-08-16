@@ -5,12 +5,12 @@ use thiserror::Error;
 use crate::{bindings::{ntuple_create_reader, ntuple_delete_reader, ntuple_read_event, ReadStatus}, Event};
 
 #[derive(Debug)]
-pub struct NTupleReader {
+pub struct Reader {
     reader: *mut crate::bindings::NTupleReader,
     idx: i64
 }
 
-impl NTupleReader {
+impl Reader {
     pub fn new<P: AsRef<Path>>(file: P) -> Option<Self> {
         let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
         let ptr = unsafe {
@@ -24,7 +24,7 @@ impl NTupleReader {
     }
 }
 
-impl Iterator for NTupleReader {
+impl Iterator for Reader {
     type Item = Result<Event, ReadError>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -49,7 +49,7 @@ impl Iterator for NTupleReader {
     }
 }
 
-impl Drop for NTupleReader {
+impl Drop for Reader {
     fn drop(&mut self) {
         unsafe { ntuple_delete_reader(self.reader) }
     }
