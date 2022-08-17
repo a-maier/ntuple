@@ -11,10 +11,11 @@ pub struct Writer (
 impl Writer {
     pub fn new<P: AsRef<Path>>(file: P, name: &str) -> Option<Self> {
         let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
+        let name = CString::new(name).unwrap();
         let ptr = unsafe {
             ntuple_create_writer(
                 file.as_ptr(),
-                name.as_bytes().as_ptr() as *const c_char
+                name.as_ptr() as *const c_char
             )
         };
         if ptr.is_null() {
