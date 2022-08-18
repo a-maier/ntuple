@@ -31,12 +31,15 @@ mod tests {
             let tmp2 = NamedTempFile::new().unwrap();
 
             let reader = Reader::new(root_file.path()).unwrap();
+            let mut nevents = reader.size_hint().0 as i64;
             {
                 let mut writer = Writer::new(tmp1.path(), "").unwrap();
                 for event in reader {
+                    nevents -= 1;
                     writer.write(&event.unwrap()).unwrap();
                 }
             }
+            assert_eq!(nevents, 0);
 
             let reader = Reader::new(tmp1.path()).unwrap();
             {

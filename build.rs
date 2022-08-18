@@ -14,7 +14,7 @@ fn compile_ntuple_writer() -> Result<()> {
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .allowlist_function("ntuple_create_reader")
         .allowlist_function("ntuple_read_event")
-        //.allowlist_function("ntuple_num_events")
+        .allowlist_function("ntuple_num_events")
         .allowlist_function("ntuple_delete_reader")
         .allowlist_function("ntuple_create_writer")
         .allowlist_function("ntuple_write_event")

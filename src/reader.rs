@@ -2,7 +2,7 @@ use std::{path::Path, ffi::CString, os::unix::prelude::OsStrExt};
 
 use thiserror::Error;
 
-use crate::{bindings::{ntuple_create_reader, ntuple_delete_reader, ntuple_read_event, ReadStatus}, Event};
+use crate::{bindings::{ntuple_create_reader, ntuple_delete_reader, ntuple_num_events, ntuple_read_event, ReadStatus}, Event};
 
 #[derive(Debug)]
 pub struct Reader {
@@ -59,6 +59,14 @@ impl Iterator for Reader {
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.idx += n as i64;
         self.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let evs = unsafe {
+            ntuple_num_events(self.reader)
+        };
+        let remaining = (evs - self.idx) as usize;
+        (remaining, Some(remaining))
     }
 }
 
