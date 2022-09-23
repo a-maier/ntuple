@@ -1,25 +1,32 @@
-use std::{path::Path, ffi::CString, os::unix::prelude::OsStrExt};
+use std::{ffi::CString, os::unix::prelude::OsStrExt, path::Path};
 
 use thiserror::Error;
 
-use crate::{bindings::{ntuple_create_reader, ntuple_delete_reader, ntuple_num_events, ntuple_read_event, ReadStatus}, Event};
+use crate::{
+    bindings::{
+        ntuple_create_reader, ntuple_delete_reader, ntuple_num_events,
+        ntuple_read_event, ReadStatus,
+    },
+    Event,
+};
 
 #[derive(Debug)]
 pub struct Reader {
     reader: *mut crate::bindings::NTupleReader,
-    idx: i64
+    idx: i64,
 }
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(file: P) -> Option<Self> {
         let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
-        let ptr = unsafe {
-            ntuple_create_reader(file.as_ptr())
-        };
+        let ptr = unsafe { ntuple_create_reader(file.as_ptr()) };
         if ptr.is_null() {
             None
         } else {
-            Some(Self{reader: ptr, idx: 0})
+            Some(Self {
+                reader: ptr,
+                idx: 0,
+            })
         }
     }
 
@@ -37,9 +44,7 @@ impl Iterator for Reader {
 
     fn next(&mut self) -> Option<Self::Item> {
         use self::ReadError::*;
-        let res = unsafe {
-            ntuple_read_event(self.reader, self.idx)
-        };
+        let res = unsafe { ntuple_read_event(self.reader, self.idx) };
         if res.status != ReadStatus::READ_NO_ENTRY {
             self.idx += 1;
         }
@@ -48,11 +53,19 @@ impl Iterator for Reader {
             ReadStatus::READ_NO_ENTRY => None,
             ReadStatus::READ_ERROR => Some(Err(ReadError)),
             ReadStatus::READ_EXCEPTION => Some(Err(Exception)),
-            ReadStatus::READ_TOO_MANY_PARTICLES => Some(Err(TooManyParticles(res.event.nparticle))),
-            ReadStatus::READ_NEGATIVE_NUMBER_OF_PARTICLES => Some(Err(NegParticleNum(res.event.nparticle))),
-            ReadStatus::READ_TOO_MANY_WEIGHTS => Some(Err(TooManyWeights(res.event.nuwgt))),
-            ReadStatus::READ_NEGATIVE_NUMBER_OF_WEIGHTS => Some(Err(NegWeightNum(res.event.nuwgt))),
-            _ => Some(Err(UnknownError))
+            ReadStatus::READ_TOO_MANY_PARTICLES => {
+                Some(Err(TooManyParticles(res.event.nparticle)))
+            }
+            ReadStatus::READ_NEGATIVE_NUMBER_OF_PARTICLES => {
+                Some(Err(NegParticleNum(res.event.nparticle)))
+            }
+            ReadStatus::READ_TOO_MANY_WEIGHTS => {
+                Some(Err(TooManyWeights(res.event.nuwgt)))
+            }
+            ReadStatus::READ_NEGATIVE_NUMBER_OF_WEIGHTS => {
+                Some(Err(NegWeightNum(res.event.nuwgt)))
+            }
+            _ => Some(Err(UnknownError)),
         }
     }
 
@@ -62,9 +75,7 @@ impl Iterator for Reader {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let evs = unsafe {
-            ntuple_num_events(self.reader)
-        };
+        let evs = unsafe { ntuple_num_events(self.reader) };
         let remaining = (evs - self.idx) as usize;
         (remaining, Some(remaining))
     }
@@ -75,7 +86,6 @@ impl Drop for Reader {
         unsafe { ntuple_delete_reader(self.reader) }
     }
 }
-
 
 #[derive(Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[non_exhaustive]

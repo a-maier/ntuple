@@ -23,7 +23,7 @@ pub struct Event {
     pub x1p: f64,
     pub x2p: f64,
     pub id1: i32,
-    pub id2:  i32,
+    pub id2: i32,
     pub fac_scale: f64,
     pub ren_scale: f64,
     pub user_weights: Vec<f64>,
@@ -43,7 +43,8 @@ impl From<NTupleEvent> for Event {
             px: unsafe { slice::from_raw_parts(ev.px, npart) }.to_owned(),
             py: unsafe { slice::from_raw_parts(ev.py, npart) }.to_owned(),
             pz: unsafe { slice::from_raw_parts(ev.pz, npart) }.to_owned(),
-            energy: unsafe { slice::from_raw_parts(ev.energy, npart) }.to_owned(),
+            energy: unsafe { slice::from_raw_parts(ev.energy, npart) }
+                .to_owned(),
             alphas: ev.alphas,
             pdg_code: unsafe { slice::from_raw_parts(ev.kf, npart) }.to_owned(),
             weight: ev.weight,
@@ -58,13 +59,13 @@ impl From<NTupleEvent> for Event {
             id2: ev.id2,
             fac_scale: ev.fac_scale,
             ren_scale: ev.ren_scale,
-            user_weights: unsafe { slice::from_raw_parts(ev.usr_wgts, nwgt) }.to_owned(),
+            user_weights: unsafe { slice::from_raw_parts(ev.usr_wgts, nwgt) }
+                .to_owned(),
             part: ev.part.try_into().unwrap(),
             alphas_power: ev.alphas_power,
         }
     }
 }
-
 
 #[derive(Copy, Clone, Default, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Part {
@@ -102,7 +103,7 @@ impl From<Part> for char {
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ConversionError {
     #[error("'{0}' is not one of 'B', 'I', 'R', 'V'")]
-    BadChar(char)
+    BadChar(char),
 }
 
 impl TryFrom<char> for Part {
@@ -115,7 +116,7 @@ impl TryFrom<char> for Part {
             'I' => Ok(I),
             'R' => Ok(R),
             'V' => Ok(V),
-            c => Err(ConversionError::BadChar(c))
+            c => Err(ConversionError::BadChar(c)),
         }
     }
 }
@@ -130,7 +131,7 @@ impl TryFrom<u8> for Part {
             b'I' => Ok(I),
             b'R' => Ok(R),
             b'V' => Ok(V),
-            c => Err(ConversionError::BadChar(c.into()))
+            c => Err(ConversionError::BadChar(c.into())),
         }
     }
 }

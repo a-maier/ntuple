@@ -1,20 +1,20 @@
 mod bindings;
+#[cfg(feature = "hepmc2")]
+pub mod conv;
 pub mod event;
 pub mod reader;
 pub mod writer;
-#[cfg(feature = "hepmc2")]
-pub mod conv;
 
+pub use crate::event::Event;
 pub use crate::reader::Reader;
 pub use crate::writer::Writer;
-pub use crate::event::Event;
 
 include!(concat!(env!("OUT_DIR"), "/flags.rs"));
 
 #[cfg(test)]
 mod tests {
-    use std::{path::PathBuf, fs::read_dir};
     use reader::Reader;
+    use std::{fs::read_dir, path::PathBuf};
     use tempfile::NamedTempFile;
 
     use super::*;
@@ -55,7 +55,6 @@ mod tests {
             for event1 in reader1 {
                 let event2 = reader2.next().unwrap();
                 assert_eq!(event1.unwrap(), event2.unwrap())
-
             }
         }
     }

@@ -1,4 +1,4 @@
-use hepmc2::event::{Particle, PdfInfo, Vertex, EnergyUnit, LengthUnit};
+use hepmc2::event::{EnergyUnit, LengthUnit, Particle, PdfInfo, Vertex};
 
 use crate::Event;
 
@@ -36,9 +36,11 @@ impl From<&Event> for hepmc2::Event {
             particles_out: particles,
             ..Default::default()
         }];
-        let mut weights = vec![ev.weight, ev.weight2, ev.me_weight, ev.me_weight2];
+        let mut weights =
+            vec![ev.weight, ev.weight2, ev.me_weight, ev.me_weight2];
         weights.extend_from_slice(&ev.user_weights);
-        let weight_names = ["", "2", "ME", "ME2"].into_iter()
+        let weight_names = ["", "2", "ME", "ME2"]
+            .into_iter()
             .map(|s| s.to_string())
             .collect();
         hepmc2::Event {
@@ -57,33 +59,35 @@ impl From<&Event> for hepmc2::Event {
 
 impl From<&hepmc2::Event> for Event {
     fn from(ev: &hepmc2::Event) -> Self {
-        let outgoing = ev.vertices.iter()
-            .flat_map(|vx| vx
-                 .particles_out
-                 .iter()
-                 .filter(|p| p.status == OUTGOING_STATUS)
-            );
+        let outgoing = ev.vertices.iter().flat_map(|vx| {
+            vx.particles_out
+                .iter()
+                .filter(|p| p.status == OUTGOING_STATUS)
+        });
 
         let mut weight_names = ev.weight_names.clone();
         let mut weights = ev.weights.clone();
-        let me_weight2 = if let Some(pos) = weight_names.iter().position(|n| n == "ME2") {
-            weight_names.remove(pos);
-            weights.remove(pos)
-        } else {
-            0.
-        };
-        let me_weight = if let Some(pos) = weight_names.iter().position(|n| n == "ME") {
-            weight_names.remove(pos);
-            weights.remove(pos)
-        } else {
-            0.
-        };
-        let weight2 = if let Some(pos) = weight_names.iter().position(|n| n == "2") {
-            weight_names.remove(pos);
-            weights.remove(pos)
-        } else {
-            0.
-        };
+        let me_weight2 =
+            if let Some(pos) = weight_names.iter().position(|n| n == "ME2") {
+                weight_names.remove(pos);
+                weights.remove(pos)
+            } else {
+                0.
+            };
+        let me_weight =
+            if let Some(pos) = weight_names.iter().position(|n| n == "ME") {
+                weight_names.remove(pos);
+                weights.remove(pos)
+            } else {
+                0.
+            };
+        let weight2 =
+            if let Some(pos) = weight_names.iter().position(|n| n == "2") {
+                weight_names.remove(pos);
+                weights.remove(pos)
+            } else {
+                0.
+            };
         let weight = if !weights.is_empty() {
             weights.remove(0)
         } else {

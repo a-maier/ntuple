@@ -1,22 +1,27 @@
-use std::{path::Path, ffi::CString, os::{unix::prelude::OsStrExt, raw::c_char}};
+use std::{
+    ffi::CString,
+    os::{raw::c_char, unix::prelude::OsStrExt},
+    path::Path,
+};
 
-use crate::{bindings::{ntuple_create_writer, ntuple_write_event, ntuple_delete_writer, NTupleEvent, WriteResult}, Event};
+use crate::{
+    bindings::{
+        ntuple_create_writer, ntuple_delete_writer, ntuple_write_event,
+        NTupleEvent, WriteResult,
+    },
+    Event,
+};
 use thiserror::Error;
 
 #[derive(Debug)]
-pub struct Writer (
-    *mut crate::bindings::NTupleWriter
-);
+pub struct Writer(*mut crate::bindings::NTupleWriter);
 
 impl Writer {
     pub fn new<P: AsRef<Path>>(file: P, name: &str) -> Option<Self> {
         let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
         let name = CString::new(name).unwrap();
         let ptr = unsafe {
-            ntuple_create_writer(
-                file.as_ptr(),
-                name.as_ptr() as *const c_char
-            )
+            ntuple_create_writer(file.as_ptr(), name.as_ptr() as *const c_char)
         };
         if ptr.is_null() {
             None
@@ -32,19 +37,39 @@ impl Writer {
         }
         let npart = event.nparticle as usize;
         if event.px.len() != npart {
-            return Err(LengthMismatch(event.px.len(), "px".to_string(), npart));
+            return Err(LengthMismatch(
+                event.px.len(),
+                "px".to_string(),
+                npart,
+            ));
         }
         if event.py.len() != npart {
-            return Err(LengthMismatch(event.py.len(), "py".to_string(), npart));
+            return Err(LengthMismatch(
+                event.py.len(),
+                "py".to_string(),
+                npart,
+            ));
         }
         if event.pz.len() != npart {
-            return Err(LengthMismatch(event.pz.len(), "pz".to_string(), npart));
+            return Err(LengthMismatch(
+                event.pz.len(),
+                "pz".to_string(),
+                npart,
+            ));
         }
         if event.energy.len() != npart {
-            return Err(LengthMismatch(event.energy.len(), "energy".to_string(), npart));
+            return Err(LengthMismatch(
+                event.energy.len(),
+                "energy".to_string(),
+                npart,
+            ));
         }
         if event.pdg_code.len() != npart {
-            return Err(LengthMismatch(event.pdg_code.len(), "pdg_code".to_string(), npart));
+            return Err(LengthMismatch(
+                event.pdg_code.len(),
+                "pdg_code".to_string(),
+                npart,
+            ));
         }
         if event.user_weights.len() > i32::MAX as usize {
             return Err(TooManyWeights);
@@ -68,7 +93,7 @@ impl Writer {
             x1p: event.x1p,
             x2p: event.x2p,
             id1: event.id1,
-            id2:  event.id2,
+            id2: event.id2,
             fac_scale: event.fac_scale,
             ren_scale: event.ren_scale,
             nuwgt: event.user_weights.len() as i32,
@@ -76,12 +101,10 @@ impl Writer {
             part: event.part.into(),
             alphas_power: event.alphas_power,
         };
-        let res = unsafe {
-            ntuple_write_event(self.0, &event)
-        };
+        let res = unsafe { ntuple_write_event(self.0, &event) };
         match res {
             WriteResult::WRITE_OK => Ok(()),
-            err => Err(WriteError::from(err))
+            err => Err(WriteError::from(err)),
         }
     }
 }
@@ -110,7 +133,7 @@ impl From<WriteResult> for WriteError {
             WriteResult::WRITE_TOO_MANY_PARTICLES => Self::TooManyParticles,
             WriteResult::WRITE_TOO_MANY_WEIGHTS => Self::TooManyWeights,
             WriteResult::WRITE_FILL_ERROR => Self::FillError,
-            _ => Self::UnknownError
+            _ => Self::UnknownError,
         }
     }
 }
