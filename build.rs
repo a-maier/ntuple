@@ -68,7 +68,7 @@ fn compile_ntuple_writer() -> Result<()> {
 }
 
 fn get_root_flags(flags: &str) -> Result<Vec<String>> {
-    use anyhow::{anyhow, Context};
+    use anyhow::{bail, Context};
     use std::{process::Command, str::from_utf8};
 
     const CFG_CMD: &str = "root-config";
@@ -80,14 +80,12 @@ fn get_root_flags(flags: &str) -> Result<Vec<String>> {
         .with_context(|| format!("Failed to run `{cmd}`"))?;
     if !output.status.success() {
         if output.stderr.is_empty() {
-            return Err(anyhow!(
-                "{CFG_CMD} {flags} failed without error messages"
-            ));
+            bail!("{CFG_CMD} {flags} failed without error messages");
         } else {
-            return Err(anyhow!(
+            bail!(
                 "{CFG_CMD} {flags} failed: {}",
                 from_utf8(&output.stderr).unwrap()
-            ));
+            );
         }
     }
     let args = from_utf8(&output.stdout)
