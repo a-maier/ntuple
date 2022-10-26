@@ -29,6 +29,10 @@ NTupleReader* ntuple_create_reader(char const *file) {
     if(!reader) return nullptr;
     if(!reader->file.IsOpen()) return nullptr;
     reader->tree = dynamic_cast<TTree*>(reader->file.Get("BHSntuples"));
+    if(!reader->tree) {
+      // fallback: sometimes the name is a bit different
+      reader->tree = dynamic_cast<TTree*>(reader->file.Get("t3"));
+    }
     if(!reader->tree) return nullptr;
 
     reader->event.part.back() = '\0'; // ensure c string is null terminated
