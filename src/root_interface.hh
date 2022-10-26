@@ -57,6 +57,7 @@ namespace ntuple {
     std::array<Double_t, MAX_NWGT> usr_wgts;
     std::array<Char_t, 2> part;
     Short_t alphas_power;
+    Char_t alphas_power_char;
   };
 
 } // namespace ntuple

@@ -15,6 +15,7 @@ struct NTupleReader {
   TFile file;
   RootEvent event;
   TTree* tree;
+  bool legacy_fmt;
 };
 
 extern "C" {
@@ -24,7 +25,8 @@ NTupleReader* ntuple_create_reader(char const *file) {
     auto *reader = new NTupleReader{
       {file, "READ"},
       RootEvent{},
-      nullptr
+      nullptr,
+      false
     };
     if(!reader) return nullptr;
     if(!reader->file.IsOpen()) return nullptr;
@@ -32,6 +34,7 @@ NTupleReader* ntuple_create_reader(char const *file) {
     if(!reader->tree) {
       // fallback: sometimes the name is a bit different
       reader->tree = dynamic_cast<TTree*>(reader->file.Get("t3"));
+      reader->legacy_fmt = true;
     }
     if(!reader->tree) return nullptr;
 
@@ -61,8 +64,12 @@ NTupleReader* ntuple_create_reader(char const *file) {
     tree.SetBranchAddress("ren_scale", &ev.ren_scale);
     tree.SetBranchAddress("nuwgt", &ev.nuwgt);
     tree.SetBranchAddress("usr_wgts", ev.usr_wgts.data());
-    tree.SetBranchAddress("part", ev.part.data());
-    tree.SetBranchAddress("alphasPower", &ev.alphas_power);
+    tree.SetBranchAddress("part", &ev.part);
+    if(reader->legacy_fmt) {
+      tree.SetBranchAddress("alphasPower", &ev.alphas_power_char);
+    } else {
+      tree.SetBranchAddress("alphasPower", &ev.alphas_power);
+    }
 
     return reader;
   } catch (...) {
@@ -147,7 +154,11 @@ ReadResult ntuple_read_event(NTupleReader * reader, int64_t const idx) {
     event.nuwgt = ev.nuwgt;
     event.usr_wgts = ev.usr_wgts.data();
     event.part = ev.part[0];
-    event.alphas_power = ev.alphas_power;
+    if(reader->legacy_fmt) {
+      event.alphas_power = ev.alphas_power_char;
+    } else {
+      event.alphas_power = ev.alphas_power;
+    }
 
     if(ev.nparticle < 0) {
       status = READ_NEGATIVE_NUMBER_OF_PARTICLES;
