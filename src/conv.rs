@@ -34,6 +34,13 @@ impl From<&Event> for hepmc2::Event {
         };
         let vertices = vec![Vertex {
             particles_out: particles,
+            // the exact `barcode` does not matter much,
+            // but it must be different from the `end_vtx`
+            // in the `particles` such that they are considered
+            // outgoing with respect to the vertex
+            // we choose a number that fits in a single ASCII byte to
+            // not waste space
+            barcode: 1,
             ..Default::default()
         }];
         let mut weights =
