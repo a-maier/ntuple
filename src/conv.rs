@@ -37,10 +37,11 @@ impl From<&Event> for hepmc2::Event {
             // the exact `barcode` does not matter much,
             // but it must be different from the `end_vtx`
             // in the `particles` such that they are considered
-            // outgoing with respect to the vertex
-            // we choose a number that fits in a single ASCII byte to
+            // outgoing with respect to the vertex.
+            // It must also be non-positive according to the HepMC standard?
+            // We choose a number that fits in two ASCII bytes to
             // not waste space
-            barcode: 1,
+            barcode: -1,
             ..Default::default()
         }];
         let mut weights =
