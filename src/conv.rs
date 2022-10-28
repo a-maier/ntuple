@@ -2,12 +2,13 @@ use hepmc2::event::{EnergyUnit, LengthUnit, Particle, PdfInfo, Vertex};
 
 use crate::Event;
 
+const INCOMING_STATUS: i32 = 4;
 const OUTGOING_STATUS: i32 = 1;
 
 impl From<&Event> for hepmc2::Event {
     fn from(ev: &Event) -> Self {
         let nparticles = ev.nparticle as usize;
-        let mut particles = Vec::with_capacity(nparticles as usize);
+        let mut particles = Vec::with_capacity(1 + nparticles as usize);
         for i in 0..nparticles {
             let p = [
                 ev.energy[i] as f64,
@@ -32,16 +33,25 @@ impl From<&Event> for hepmc2::Event {
             scale: ev.fac_scale,
             ..Default::default() // TODO: xf?
         };
+        // the exact `barcode` does not matter much,
+        // but it must be different from the `end_vtx`
+        // in the `particles` such that they are considered
+        // outgoing with respect to the vertex.
+        // It must also be non-positive according to the HepMC standard?
+        // We choose a number that fits in two ASCII bytes to
+        // not waste space
+        let vtx_id = -1;
+        // C++ HepMC3 needs one incoming particle,
+        // otherwise it seems to just discard the vertex
+        let incoming = Particle {
+            status: INCOMING_STATUS,
+            end_vtx: vtx_id,
+            ..Default::default()
+        };
         let vertices = vec![Vertex {
+            particles_in: vec![incoming],
             particles_out: particles,
-            // the exact `barcode` does not matter much,
-            // but it must be different from the `end_vtx`
-            // in the `particles` such that they are considered
-            // outgoing with respect to the vertex.
-            // It must also be non-positive according to the HepMC standard?
-            // We choose a number that fits in two ASCII bytes to
-            // not waste space
-            barcode: -1,
+            barcode: vtx_id,
             ..Default::default()
         }];
         let mut weights =
