@@ -79,6 +79,16 @@ impl Iterator for Reader {
         let remaining = (evs - self.idx) as usize;
         (remaining, Some(remaining))
     }
+
+    fn last(mut self) -> Option<Self::Item> {
+        let evs = unsafe { ntuple_num_events(self.reader) };
+        if evs > 0 {
+            self.idx = evs - 1;
+            self.next()
+        } else {
+            None
+        }
+    }
 }
 
 impl Drop for Reader {
