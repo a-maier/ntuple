@@ -43,13 +43,15 @@ impl From<&Event> for hepmc2::Event {
         let vtx_id = -1;
         // C++ HepMC3 needs one incoming particle,
         // otherwise it seems to just discard the vertex
+        // Rivet 3.1.X requires _two_ incoming particles
+        // TODO: use correct momentum and id
         let incoming = Particle {
             status: INCOMING_STATUS,
             end_vtx: vtx_id,
             ..Default::default()
         };
         let vertices = vec![Vertex {
-            particles_in: vec![incoming],
+            particles_in: vec![incoming.clone(), incoming],
             particles_out: particles,
             barcode: vtx_id,
             ..Default::default()
