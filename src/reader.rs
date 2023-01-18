@@ -91,6 +91,8 @@ impl Iterator for Reader {
     }
 }
 
+impl ExactSizeIterator for Reader { }
+
 impl Drop for Reader {
     fn drop(&mut self) {
         unsafe { ntuple_delete_reader(self.reader) }
