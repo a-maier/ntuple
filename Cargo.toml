@@ -2,6 +2,10 @@
 name = "ntuple"
 version = "0.7.0"
 edition = "2021"
+authors = ["Andreas Maier <andreas.martin.maier@desy.de>"]
+description = "Read and write ntuple ROOT files"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/a-maier/ntuple"
 
 [dependencies]
 hepmc2 = { version = "0.5", optional = true }
