@@ -140,6 +140,6 @@ impl TryFrom<i8> for Part {
     type Error = ConversionError;
 
     fn try_from(c: i8) -> Result<Self, Self::Error> {
-        (c as i8).try_into()
+        c.try_into()
     }
 }
