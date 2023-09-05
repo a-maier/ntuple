@@ -29,8 +29,8 @@ namespace ntuple {
   static_assert(sizeof(Float_t) == sizeof(float));
   static_assert(sizeof(Double_t) == sizeof(double));
 
-  constexpr std::size_t MAX_NPARTICLE = 100;
-  constexpr std::size_t MAX_NWGT = 100;
+  constexpr std::size_t MAX_NPARTICLE = 8192;
+  constexpr std::size_t MAX_NWGT = 8192;
 
   struct RootEvent {
     Int_t id;
