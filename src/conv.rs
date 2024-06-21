@@ -8,7 +8,7 @@ const OUTGOING_STATUS: i32 = 1;
 impl From<&Event> for hepmc2::Event {
     fn from(ev: &Event) -> Self {
         let nparticles = ev.nparticle as usize;
-        let mut particles = Vec::with_capacity(1 + nparticles as usize);
+        let mut particles = Vec::with_capacity(1 + nparticles);
         for i in 0..nparticles {
             let p = [
                 ev.energy[i] as f64,
