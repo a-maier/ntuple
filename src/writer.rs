@@ -29,7 +29,9 @@ impl Writer {
         };
         let name = match CString::new(name) {
             Ok(f) => f,
-            Err(err) => panic!("Failed to create nTuple Writer with name {name}: {err}")
+            Err(err) => {
+                panic!("Failed to create nTuple Writer with name {name}: {err}")
+            }
         };
         let ptr = unsafe {
             ntuple_create_writer(file.as_ptr(), name.as_ptr() as *const c_char)

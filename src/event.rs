@@ -39,8 +39,7 @@ impl From<NTupleEvent> for Event {
         let nwgt = ev.nuwgt as usize;
         let part = match ev.part.try_into() {
             Ok(part) => part,
-            Err(err) =>
-                panic!("Unrecognised event type: {err}"),
+            Err(err) => panic!("Unrecognised event type: {err}"),
         };
         Self {
             id: ev.id,
@@ -79,6 +78,7 @@ pub enum Part {
     I,
     R,
     V,
+    S,
 }
 
 impl From<Part> for u8 {
@@ -89,6 +89,7 @@ impl From<Part> for u8 {
             I => b'I',
             R => b'R',
             V => b'V',
+            S => b'S',
         }
     }
 }
@@ -107,6 +108,9 @@ impl From<Part> for char {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum ConversionError {
+    // We also support 'S', but don't want to encourage users to use
+    // it, as it is not an official event type according to
+    // arXiv:1310.7439
     #[error("'{0}' is not one of 'B', 'I', 'R', 'V'")]
     BadChar(char),
 }
@@ -121,6 +125,7 @@ impl TryFrom<char> for Part {
             'I' => Ok(I),
             'R' => Ok(R),
             'V' => Ok(V),
+            'S' => Ok(S),
             c => Err(ConversionError::BadChar(c)),
         }
     }
@@ -136,6 +141,7 @@ impl TryFrom<u8> for Part {
             b'I' => Ok(I),
             b'R' => Ok(R),
             b'V' => Ok(V),
+            b'S' => Ok(S),
             c => Err(ConversionError::BadChar(c.into())),
         }
     }
