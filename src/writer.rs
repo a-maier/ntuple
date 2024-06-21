@@ -18,8 +18,19 @@ pub struct Writer(*mut crate::bindings::NTupleWriter);
 
 impl Writer {
     pub fn new<P: AsRef<Path>>(file: P, name: &str) -> Option<Self> {
-        let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
-        let name = CString::new(name).unwrap();
+        let file = file.as_ref();
+        let file = match CString::new(file.as_os_str().as_bytes()) {
+            Ok(f) => f,
+            Err(err) => panic!(
+                "Failed to create nTuple Writer to {file:?}: Found nul byte at position {} in filename",
+                err.nul_position()
+
+            )
+        };
+        let name = match CString::new(name) {
+            Ok(f) => f,
+            Err(err) => panic!("Failed to create nTuple Writer with name {name}: {err}")
+        };
         let ptr = unsafe {
             ntuple_create_writer(file.as_ptr(), name.as_ptr() as *const c_char)
         };

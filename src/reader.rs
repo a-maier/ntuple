@@ -18,7 +18,14 @@ pub struct Reader {
 
 impl Reader {
     pub fn new<P: AsRef<Path>>(file: P) -> Option<Self> {
-        let file = CString::new(file.as_ref().as_os_str().as_bytes()).unwrap();
+        let file = file.as_ref();
+        let file = match CString::new(file.as_os_str().as_bytes()) {
+            Ok(f) => f,
+            Err(err) => panic!(
+                "Failed to create nTuple Reader from {file:?}: Found nul byte at position {} in filename",
+                err.nul_position()
+            )
+        };
         let ptr = unsafe { ntuple_create_reader(file.as_ptr()) };
         if ptr.is_null() {
             None

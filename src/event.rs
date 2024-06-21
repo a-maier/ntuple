@@ -37,6 +37,11 @@ impl From<NTupleEvent> for Event {
         assert!(ev.nuwgt >= 0);
         let npart = ev.nparticle as usize;
         let nwgt = ev.nuwgt as usize;
+        let part = match ev.part.try_into() {
+            Ok(part) => part,
+            Err(err) =>
+                panic!("Unrecognised event type: {err}"),
+        };
         Self {
             id: ev.id,
             nparticle: ev.nparticle,
@@ -61,7 +66,7 @@ impl From<NTupleEvent> for Event {
             ren_scale: ev.ren_scale,
             user_weights: unsafe { slice::from_raw_parts(ev.usr_wgts, nwgt) }
                 .to_owned(),
-            part: ev.part.try_into().unwrap(),
+            part,
             alphas_power: ev.alphas_power,
         }
     }
