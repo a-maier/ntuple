@@ -10,11 +10,13 @@ repository = "https://github.com/a-maier/ntuple"
 [dependencies]
 hepmc2 = { version = "0.7", optional = true }
 thiserror = "1.0"
+get-root-flags = { path = "get-root-flags" }
 
 [build-dependencies]
 anyhow = "1.0"
 bindgen = "0.69"
 cc = "1.0"
+get-root-flags = { path = "get-root-flags" }
 
 [dev-dependencies]
 tempfile = "3.3"

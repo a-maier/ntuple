@@ -2,6 +2,8 @@ use anyhow::Result;
 use std::io::Write;
 use std::{env, fs::File, path::PathBuf};
 
+use get_root_flags::get_root_flags;
+
 fn main() -> Result<()> {
     compile_ntuple_writer()
 }
@@ -65,30 +67,4 @@ fn compile_ntuple_writer() -> Result<()> {
     }
 
     Ok(())
-}
-
-fn get_root_flags(flags: &str) -> Result<Vec<String>> {
-    use anyhow::{bail, Context};
-    use std::{process::Command, str::from_utf8};
-
-    const CFG_CMD: &str = "root-config";
-
-    let cmd = format!("{CFG_CMD} {flags}");
-    let output = Command::new(CFG_CMD)
-        .arg(flags)
-        .output()
-        .with_context(|| format!("Failed to run `{cmd}`"))?;
-    if !output.status.success() {
-        if output.stderr.is_empty() {
-            bail!("{CFG_CMD} {flags} failed without error messages");
-        } else {
-            bail!(
-                "{CFG_CMD} {flags} failed: {}",
-                from_utf8(&output.stderr).unwrap()
-            );
-        }
-    }
-    let args = from_utf8(&output.stdout)
-        .with_context(|| format!("Failed to convert `{cmd}` output to utf8"))?;
-    Ok(args.split_whitespace().map(|arg| arg.to_owned()).collect())
 }

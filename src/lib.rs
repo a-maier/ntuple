@@ -11,6 +11,8 @@ pub use crate::writer::Writer;
 
 include!(concat!(env!("OUT_DIR"), "/flags.rs"));
 
+pub use get_root_flags::get_root_flags;
+
 #[cfg(test)]
 mod tests {
     use reader::Reader;
