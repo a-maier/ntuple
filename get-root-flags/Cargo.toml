@@ -2,6 +2,10 @@
 name = "get-root-flags"
 version = "0.1.0"
 edition = "2021"
+authors = ["Andreas Maier <andreas.martin.maier@desy.de>"]
+description = "Get output from root-config"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/a-maier/ntuple"
 
 [dependencies]
 thiserror = "1.0"
