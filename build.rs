@@ -11,7 +11,7 @@ fn compile_ntuple_writer() -> Result<()> {
 
     let bindings = bindgen::Builder::default()
         .header("src/ntuple.h")
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .allowlist_function("ntuple_create_reader")
         .allowlist_function("ntuple_read_event")
         .allowlist_function("ntuple_num_events")

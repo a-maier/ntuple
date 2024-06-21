@@ -8,12 +8,12 @@ license = "GPL-3.0-or-later"
 repository = "https://github.com/a-maier/ntuple"
 
 [dependencies]
-hepmc2 = { version = "0.5", optional = true }
+hepmc2 = { version = "0.7", optional = true }
 thiserror = "1.0"
 
 [build-dependencies]
 anyhow = "1.0"
-bindgen = "0.66"
+bindgen = "0.69"
 cc = "1.0"
 
 [dev-dependencies]
