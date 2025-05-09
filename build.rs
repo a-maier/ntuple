@@ -21,8 +21,9 @@ fn compile_ntuple_writer() -> Result<()> {
         .allowlist_function("ntuple_create_writer")
         .allowlist_function("ntuple_write_event")
         .allowlist_function("ntuple_delete_writer")
-        .newtype_enum("ReadStatus")
-        .newtype_enum("WriteResult")
+        .newtype_enum("NTupleReadStatus")
+        .newtype_enum("NTupleCreateError")
+        .newtype_enum("NTupleWriteResult")
         .generate()
         .expect("Failed to generate ntuple writer bindings");
 
@@ -31,6 +32,7 @@ fn compile_ntuple_writer() -> Result<()> {
         .expect("Failed to write ntuple bindings!");
 
     println!("cargo:rerun-if-changed=src/ntupleevent.h");
+    println!("cargo:rerun-if-changed=src/create_error.h");
     println!("cargo:rerun-if-changed=src/ntuplereader.h");
     println!("cargo:rerun-if-changed=src/ntuplewriter.h");
     println!("cargo:rerun-if-changed=src/root_interface.hh");

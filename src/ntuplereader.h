@@ -2,6 +2,7 @@
 #define NTUPLEREADER_H
 
 #include "ntupleevent.h"
+#include "create_error.h"
 
 typedef struct NTupleReader NTupleReader;
 
@@ -14,18 +15,22 @@ typedef enum {
   READ_NEGATIVE_NUMBER_OF_WEIGHTS,
   READ_ERROR,
   READ_EXCEPTION,
-} ReadStatus;
-
+} NTupleReadStatus;
 
 typedef struct {
   NTupleEvent event;
-  ReadStatus status;
-} ReadResult;
+  NTupleReadStatus status;
+} NTupleReadResult;
 
-NTupleReader* ntuple_create_reader(char const* file);
+typedef struct {
+  NTupleReader* reader;
+  NTupleCreateError error;
+} NTupleReaderCreateResult;
+
+NTupleReaderCreateResult ntuple_create_reader(char const* file);
 void ntuple_delete_reader(NTupleReader* reader);
 
 int64_t ntuple_num_events(NTupleReader* reader);
-ReadResult ntuple_read_event(NTupleReader* reader, int64_t idx);
+NTupleReadResult ntuple_read_event(NTupleReader* reader, int64_t idx);
 
 #endif /* NTUPLEREADER_H */

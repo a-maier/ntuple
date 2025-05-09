@@ -19,7 +19,7 @@ struct NTupleReader {
 };
 
 extern "C" {
-NTupleReader* ntuple_create_reader(char const *file) {
+NTupleReaderCreateResult ntuple_create_reader(char const *file) {
   try {
     std::lock_guard<std::mutex> lock{file_mutex};
     auto *reader = new NTupleReader{
@@ -28,15 +28,24 @@ NTupleReader* ntuple_create_reader(char const *file) {
       nullptr,
       false
     };
-    if(!reader) return nullptr;
-    if(!reader->file.IsOpen()) return nullptr;
+    if(!reader || !reader->file.IsOpen()) {
+      return NTupleReaderCreateResult {
+        nullptr,
+        OPEN_FAILED
+      };
+    }
     reader->tree = dynamic_cast<TTree*>(reader->file.Get("BHSntuples"));
     if(!reader->tree) {
       // fallback: sometimes the name is a bit different
       reader->tree = dynamic_cast<TTree*>(reader->file.Get("t3"));
       reader->legacy_fmt = true;
     }
-    if(!reader->tree) return nullptr;
+    if(!reader->tree) {
+      return NTupleReaderCreateResult {
+        nullptr,
+        NO_TTREE
+      };
+    }
 
     reader->event.part.back() = '\0'; // ensure c string is null terminated
 
@@ -71,9 +80,15 @@ NTupleReader* ntuple_create_reader(char const *file) {
       tree.SetBranchAddress("alphasPower", &ev.alphas_power);
     }
 
-    return reader;
+    return NTupleReaderCreateResult {
+      reader,
+      NONE
+    };
   } catch (...) {
-    return nullptr;
+    return NTupleReaderCreateResult {
+      nullptr,
+      EXCEPTION
+    };
   }
 }
 
@@ -106,12 +121,12 @@ int64_t ntuple_num_events(NTupleReader * reader) {
   }
 }
 
-ReadResult ntuple_read_event(NTupleReader * reader, int64_t const idx) {
+NTupleReadResult ntuple_read_event(NTupleReader * reader, int64_t const idx) {
   assert(reader);
   assert(reader->tree);
   auto const & ev = reader->event;
 
-  ReadResult result;
+  NTupleReadResult result;
   auto & event = result.event;
   auto & status = result.status;
   status = READ_OK;

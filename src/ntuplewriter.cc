@@ -24,7 +24,7 @@ struct NTupleWriter {
 };
 
 extern "C" {
-NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
+NTupleWriterCreateResult ntuple_create_writer(char const *file, char const *title) {
   try {
     std::lock_guard<std::mutex> lock{file_mutex};
     auto *writer = new NTupleWriter{
@@ -32,11 +32,20 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
       RootEvent{},
       nullptr
     };
-    if(!writer) return nullptr;
-    if(!writer->file.IsOpen()) return nullptr;
+    if(!writer || !writer->file.IsOpen()) {
+      return NTupleWriterCreateResult {
+        nullptr,
+        OPEN_FAILED
+      };
+    }
     writer->file.cd();
     writer->tree = new TTree{"BHSntuples", title};
-    if(!writer->tree) return nullptr;
+    if(!writer->tree) {
+      return NTupleWriterCreateResult {
+        nullptr,
+        NO_TTREE,
+      };
+    }
     writer->event.part.back() = '\0'; // ensure c string is null terminated
 
     auto &ev = writer->event;
@@ -67,9 +76,15 @@ NTupleWriter *ntuple_create_writer(char const *file, char const *title) {
     tree.Branch("part", ev.part.data(), "part/C");
     tree.Branch("alphasPower", &ev.alphas_power, "alphasPower/S");
 
-    return writer;
+    return NTupleWriterCreateResult {
+      writer,
+      NONE
+    };
   } catch (...) {
-    return nullptr;
+    return NTupleWriterCreateResult {
+      nullptr,
+      EXCEPTION
+    };
   }
 }
 
@@ -90,7 +105,7 @@ void ntuple_delete_writer(NTupleWriter * writer) {
   delete writer;
 }
 
-WriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event) {
+NTupleWriteResult ntuple_write_event(NTupleWriter * writer, NTupleEvent const * event) {
   assert(writer);
   assert(event);
   assert(writer->tree);

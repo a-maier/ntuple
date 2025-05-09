@@ -1,11 +1,16 @@
-use std::{ffi::CString, os::unix::prelude::OsStrExt, path::Path};
+use std::{
+    ffi::CString,
+    os::unix::prelude::OsStrExt,
+    path::{Path, PathBuf},
+};
 
 use thiserror::Error;
 
 use crate::{
     bindings::{
         ntuple_create_reader, ntuple_delete_reader, ntuple_num_events,
-        ntuple_read_event, ReadStatus,
+        ntuple_read_event, NTupleCreateError, NTupleReadStatus,
+        NTupleReaderCreateResult,
     },
     Event,
 };
@@ -17,23 +22,30 @@ pub struct Reader {
 }
 
 impl Reader {
-    pub fn new<P: AsRef<Path>>(file: P) -> Option<Self> {
-        let file = file.as_ref();
-        let file = match CString::new(file.as_os_str().as_bytes()) {
+    pub fn new<P: AsRef<Path>>(file: P) -> Result<Self, CreateError> {
+        let filename = file.as_ref();
+        let file = match CString::new(filename.as_os_str().as_bytes()) {
             Ok(f) => f,
             Err(err) => panic!(
-                "Failed to create nTuple Reader from {file:?}: Found nul byte at position {} in filename",
+                "Failed to create nTuple Reader from {filename:?}: Found nul byte at position {} in filename",
                 err.nul_position()
             )
         };
-        let ptr = unsafe { ntuple_create_reader(file.as_ptr()) };
-        if ptr.is_null() {
-            None
+        let NTupleReaderCreateResult { reader, error } =
+            unsafe { ntuple_create_reader(file.as_ptr()) };
+        if reader.is_null() {
+            let err = match error {
+                NTupleCreateError::OPEN_FAILED => {
+                    CreateError::Open(filename.to_path_buf())
+                }
+                NTupleCreateError::NO_TTREE => CreateError::NoTTree,
+                NTupleCreateError::EXCEPTION => CreateError::Exception,
+                _ => CreateError::Unknown,
+            };
+            Err(err)
         } else {
-            Some(Self {
-                reader: ptr,
-                idx: 0,
-            })
+            debug_assert_eq!(error, NTupleCreateError::NONE);
+            Ok(Self { reader, idx: 0 })
         }
     }
 
@@ -52,27 +64,27 @@ impl Iterator for Reader {
     fn next(&mut self) -> Option<Self::Item> {
         use self::ReadError::*;
         let res = unsafe { ntuple_read_event(self.reader, self.idx) };
-        if res.status != ReadStatus::READ_NO_ENTRY {
+        if res.status != NTupleReadStatus::READ_NO_ENTRY {
             self.idx += 1;
         }
         match res.status {
-            ReadStatus::READ_OK => Some(Ok(res.event.into())),
-            ReadStatus::READ_NO_ENTRY => None,
-            ReadStatus::READ_ERROR => Some(Err(ReadError)),
-            ReadStatus::READ_EXCEPTION => Some(Err(Exception)),
-            ReadStatus::READ_TOO_MANY_PARTICLES => {
+            NTupleReadStatus::READ_OK => Some(Ok(res.event.into())),
+            NTupleReadStatus::READ_NO_ENTRY => None,
+            NTupleReadStatus::READ_ERROR => Some(Err(ReadError)),
+            NTupleReadStatus::READ_EXCEPTION => Some(Err(Exception)),
+            NTupleReadStatus::READ_TOO_MANY_PARTICLES => {
                 Some(Err(TooManyParticles(res.event.nparticle)))
             }
-            ReadStatus::READ_NEGATIVE_NUMBER_OF_PARTICLES => {
+            NTupleReadStatus::READ_NEGATIVE_NUMBER_OF_PARTICLES => {
                 Some(Err(NegParticleNum(res.event.nparticle)))
             }
-            ReadStatus::READ_TOO_MANY_WEIGHTS => {
+            NTupleReadStatus::READ_TOO_MANY_WEIGHTS => {
                 Some(Err(TooManyWeights(res.event.nuwgt)))
             }
-            ReadStatus::READ_NEGATIVE_NUMBER_OF_WEIGHTS => {
+            NTupleReadStatus::READ_NEGATIVE_NUMBER_OF_WEIGHTS => {
                 Some(Err(NegWeightNum(res.event.nuwgt)))
             }
-            _ => Some(Err(UnknownError)),
+            _ => Some(Err(Unknown)),
         }
     }
 
@@ -107,7 +119,6 @@ impl Drop for Reader {
 }
 
 #[derive(Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
-#[non_exhaustive]
 pub enum ReadError {
     #[error("Too many particles in event")]
     TooManyParticles(i32),
@@ -123,5 +134,18 @@ pub enum ReadError {
     Exception,
 
     #[error("Unknown error")]
-    UnknownError,
+    Unknown,
+}
+
+#[derive(Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum CreateError {
+    #[error("Failed to open {0:?}")]
+    Open(PathBuf),
+    #[error("Failed to find a `TTree` named \"BHSntuples\"")]
+    NoTTree,
+    #[error("Encountered an exception during creation")]
+    Exception,
+
+    #[error("Unknown error")]
+    Unknown,
 }

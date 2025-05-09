@@ -1,13 +1,14 @@
 use std::{
     ffi::CString,
     os::{raw::c_char, unix::prelude::OsStrExt},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use crate::{
     bindings::{
         ntuple_create_writer, ntuple_delete_writer, ntuple_write_event,
-        NTupleEvent, WriteResult,
+        NTupleCreateError, NTupleEvent, NTupleWriteResult,
+        NTupleWriterCreateResult,
     },
     Event,
 };
@@ -17,12 +18,15 @@ use thiserror::Error;
 pub struct Writer(*mut crate::bindings::NTupleWriter);
 
 impl Writer {
-    pub fn new<P: AsRef<Path>>(file: P, name: &str) -> Option<Self> {
-        let file = file.as_ref();
-        let file = match CString::new(file.as_os_str().as_bytes()) {
+    pub fn new<P: AsRef<Path>>(
+        file: P,
+        name: &str,
+    ) -> Result<Self, CreateError> {
+        let filename = file.as_ref();
+        let file = match CString::new(filename.as_os_str().as_bytes()) {
             Ok(f) => f,
             Err(err) => panic!(
-                "Failed to create nTuple Writer to {file:?}: Found nul byte at position {} in filename",
+                "Failed to create nTuple Writer to {filename:?}: Found nul byte at position {} in filename",
                 err.nul_position()
 
             )
@@ -33,13 +37,22 @@ impl Writer {
                 panic!("Failed to create nTuple Writer with name {name}: {err}")
             }
         };
-        let ptr = unsafe {
+        let NTupleWriterCreateResult { writer, error } = unsafe {
             ntuple_create_writer(file.as_ptr(), name.as_ptr() as *const c_char)
         };
-        if ptr.is_null() {
-            None
+        if writer.is_null() {
+            let err = match error {
+                NTupleCreateError::OPEN_FAILED => {
+                    CreateError::Create(filename.to_path_buf())
+                }
+                NTupleCreateError::NO_TTREE => CreateError::NoTTree,
+                NTupleCreateError::EXCEPTION => CreateError::Exception,
+                _ => CreateError::Unknown,
+            };
+            Err(err)
         } else {
-            Some(Self(ptr))
+            debug_assert_eq!(error, NTupleCreateError::NONE);
+            Ok(Self(writer))
         }
     }
 
@@ -116,7 +129,7 @@ impl Writer {
         };
         let res = unsafe { ntuple_write_event(self.0, &event) };
         match res {
-            WriteResult::WRITE_OK => Ok(()),
+            NTupleWriteResult::WRITE_OK => Ok(()),
             err => Err(WriteError::from(err)),
         }
     }
@@ -140,12 +153,14 @@ pub enum WriteError {
     UnknownError,
 }
 
-impl From<WriteResult> for WriteError {
-    fn from(r: WriteResult) -> Self {
+impl From<NTupleWriteResult> for WriteError {
+    fn from(r: NTupleWriteResult) -> Self {
         match r {
-            WriteResult::WRITE_TOO_MANY_PARTICLES => Self::TooManyParticles,
-            WriteResult::WRITE_TOO_MANY_WEIGHTS => Self::TooManyWeights,
-            WriteResult::WRITE_FILL_ERROR => Self::FillError,
+            NTupleWriteResult::WRITE_TOO_MANY_PARTICLES => {
+                Self::TooManyParticles
+            }
+            NTupleWriteResult::WRITE_TOO_MANY_WEIGHTS => Self::TooManyWeights,
+            NTupleWriteResult::WRITE_FILL_ERROR => Self::FillError,
             _ => Self::UnknownError,
         }
     }
@@ -155,4 +170,17 @@ impl Drop for Writer {
     fn drop(&mut self) {
         unsafe { ntuple_delete_writer(self.0) }
     }
+}
+
+#[derive(Clone, Debug, Error, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub enum CreateError {
+    #[error("Failed to create file {0:?}")]
+    Create(PathBuf),
+    #[error("Failed to create a `TTree` named \"BHSntuples\"")]
+    NoTTree,
+    #[error("Encountered an exception during creation")]
+    Exception,
+
+    #[error("Unknown error")]
+    Unknown,
 }
