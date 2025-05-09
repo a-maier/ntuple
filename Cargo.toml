@@ -2,7 +2,7 @@
 name = "ntuple"
 version = "0.9.1"
 edition = "2024"
-authors = ["Andreas Maier <andreas.martin.maier@desy.de>"]
+authors = ["Andreas Maier <amaier@ifae.es>"]
 description = "Read and write ntuple ROOT files"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/a-maier/ntuple"
